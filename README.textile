@@ -1,0 +1,5 @@
+Xup is a lightweight markup language (à la Textile) adapted to french
+typography. It is regex based, and borrows many ideas to
+"Challis":http://github.com/chneukirchen/challis.
+
+
