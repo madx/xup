@@ -1,5 +1,15 @@
-Xup is a lightweight markup language (à la Textile) adapted to french
-typography. It is regex based, and borrows many ideas to
-"Challis":http://github.com/chneukirchen/challis.
+h1. Xup
 
+Xup is a lightweight markup language. It borrows many ideas to Haml,
+Markaby and Textile. I made it to have a language that handles correctly and
+easily different kinds of typography.
+Xup is written in pure Ruby, making it highly extensible. You can add your own
+constructs and tags.
 
+h2. Example
+
+<pre><code>
+para <<end :class => "notice"
+Hello, this is Xup! This is a simple paragraph. You can include raw HTML in
+them.
+</code></pre>
