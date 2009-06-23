@@ -1,11 +1,6 @@
-require File.join(File.dirname(__FILE__), 'helper')
-
-
 describe Xup::Context do
 
   before do
-    @context = Xup::Context.new
-
     def build(&blk)
       @context.instance_eval &blk
     end
@@ -13,115 +8,149 @@ describe Xup::Context do
     def buffer
       @context.buffer
     end
+
+    @context = Xup::Context.new
   end
 
-  describe "initialization" do
-    should "create a read-only empty buffer" do
+  describe "== Initialization" do
+    it "creates a read-only empty buffer" do
       @context.buffer.should.be.empty
       lambda { @context.buffer = "foo" }.should.raise NoMethodError
     end
 
-    should "have options" do
+    it "provides default options" do
       @context.options.should == Xup::Context::DEFAULTS
     end
   end
 
-  describe "#block!" do
-    should "append a block tag in the buffer" do
-      build { block! :p, "foo bar" }
-      buffer.should == "<p>\n  foo bar\n</p>\n\n"
+  describe "== Underlying methods" do
+    describe ".tag!" do
+      it "returns a string with the corresponding.tag!" do
+        @context.tag!(:em, "word").should == "<em>word</em>"
+      end
+
+      it "returns an empty tag when contents are empty" do
+        @context.tag!(:em).should == '<em></em>'
+      end
+
+      it "transorms the attributes hash to HTML attributes" do
+        @context.tag!(:a, 'link', :href => 'http://somesite.com').
+          should == '<a href="http://somesite.com">link</a>'
+      end
+
+      it "makes a nested tag when given a block" do
+        @context.tag!(:p) { @buffer << tag!(:em, 'word') }.
+          should == "<p><em>word</em></p>"
+      end
     end
 
-    should "transform the attrs param into an HTML attribute list" do
-      build { block! :p, "foo", :attr => "value" }
-      buffer.should == %Q{<p attr="value">\n  foo\n</p>\n\n}
+    describe "#block!" do
+      it 'acts as inline! when there is a single line' do
+        build { block! :p, "paragraph"}
+        buffer.should == "<p>paragraph</p>\n"
+      end
+
+      it "indents the contents when a block is given" do
+        build { block!(:p) { text "a\nparagraph" } }
+        buffer.should == "<p>\n  a\n  paragraph\n</p>\n"
+      end
     end
 
-    should "build a string if an attribute is passed an array" do
-      build { block! :p, "foo", :attr => %w[value1 value2] }
-      buffer.should == %Q{<p attr="value1 value2">\n  foo\n</p>\n\n}
-    end
-  end
-
-  describe "#clear!" do
-    should "create a new buffer" do
-      build { para "foo" }
-      buffer.should.not.be.empty
-      @context.clear!
-      buffer.should.be.empty
-    end
-  end
-
-  describe "#para" do
-    should "build a paragraph" do
-      build { para "foo" }
-      buffer.should == "<p>\n  foo\n</p>\n\n"
-    end
-
-    should "use line breaks if given an array" do
-      build { para %w[one two] }
-      buffer.should == "<p>\n  one<br />\n  two\n</p>\n\n"
-    end
-  end
-
-  describe "#quote" do
-    should "build a blockquote based on a string" do
-      build { quote "foo" }
-      buffer.should == "<blockquote>\n  foo\n</blockquote>\n\n"
+    describe "#text" do
+      it "outputs given contents in the buffer" do
+        build { text "foo" }
+        buffer.should == "foo"
+      end
     end
   end
 
-  describe "#list" do
-    should "build an unordered list based on an array" do
-      build { list %w[one two three] }
-      buffer.should == <<out
-<ul>
-  <li>one</li>
-  <li>two</li>
-  <li>three</li>
-</ul>
+  describe "== Block tags" do
 
-out
+    describe "para (paragraph, <p>)" do
+      it "outputs a block paragraph in the buffer" do
+        build { para "paragraph" }
+        buffer.should == "<p>paragraph</p>\n"
+      end
+
+      it "supports nesting" do
+        build { para { text "nested text" } }
+        buffer.should == "<p>nested text</p>\n"
+      end
+
+      it "should be callable as p" do
+        @context.para("paragraph").should == @context.p("paragraph")
+      end
+    end
+
+    describe "quote (block quotation, <blockquote>)" do
+      it "outputs a block quotation in the buffer" do
+        build { quote "Xup rocks!" }
+        buffer.should == "<blockquote>Xup rocks!</blockquote>\n"
+      end
+
+      it "supports nesting" do
+        build { quote { text "Xup rocks!\n"; inline! :cite, 'me' } }
+        buffer.should == %Q{
+          <blockquote>\n  Xup rocks!\n  <cite>me</cite>\n</blockquote>
+        }.strip << "\n"
+      end
+
+      it "should be callable as bq" do
+        @context.bq("quote").should == @context.quote("quote")
+      end
+    end
+
+    describe "list (unordered list, <ul>)" do
+      it "outputs an unordered list of elements in the buffer" do
+        build { list %w[one two] }
+        buffer.should == "<ul>\n  <li>one</li>\n  <li>two</li>\n</ul>\n"
+      end
+
+      it "supports nesting" do
+        build {
+          list {
+            inline! :li, 'one'
+            text "\n"
+            inline! :li, 'two'
+          }
+        }
+        buffer.should == "<ul>\n  <li>one</li>\n  <li>two</li>\n</ul>\n"
+      end
+    end
+
+    describe "order (ordred list, <ol>)" do
+      it "works like list() but with an ordered list" do
+        build {
+          order %w[one two]
+          order {
+            inline! :li, 'one'
+            text "\n"
+            inline! :li, 'two'
+          }
+        }
+        buffer.should == "<ol>\n  <li>one</li>\n  <li>two</li>\n</ol>\n" +
+                         "<ol>\n  <li>one</li>\n  <li>two</li>\n</ol>\n"
+      end
+    end
+
+    describe "define (definition list, <dl>)" do
+      it "takes an hash an outputs a definition list in the buffer" do
+        build { define "word" => "a unit of language" }
+        buffer.should ==
+          "<dl>\n  <dt>word</dt>\n  <dd>a unit of language</dd>\n</dl>\n"
+      end
+
+      it "supports nesting" do
+        build {
+          define {
+            inline! :dt, "word"
+            text "\n"
+            inline! :dd, "a unit of language"
+          }
+        }
+        buffer.should ==
+          "<dl>\n  <dt>word</dt>\n  <dd>a unit of language</dd>\n</dl>\n"
+      end
     end
   end
-
-  describe "#order" do
-    should "build an ordered list based on an array" do
-      build { order %w[one two three] }
-      buffer.should == <<out
-<ol>
-  <li>one</li>
-  <li>two</li>
-  <li>three</li>
-</ol>
-
-out
-    end
-  end
-
-  describe "#define" do
-    should "build a definition list based on a hash" do
-      build { define "foo" => "bar" }
-      buffer.should == <<out
-<dl>
-  <dt>foo</dt>
-  <dd>bar</dd>
-</dl>
-
-out
-    end
-
-    should "have multiple definitions when a value is an array" do
-      build { define "foo" => %w[bar baz] }
-      buffer.should == <<out
-<dl>
-  <dt>foo</dt>
-  <dd>bar</dd>
-  <dd>baz</dd>
-</dl>
-
-out
-    end
-  end
-
 end

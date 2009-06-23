@@ -11,68 +11,90 @@ module Xup
 
     attr_reader :buffer, :options
 
+    def self.build(&block)
+      new.tap {|c| c.instance_eval(&block) }.buffer
+    end
+
     def initialize(options={})
       @buffer = ""
       @options = DEFAULTS.dup.update(options)
     end
 
-    def clear!
-      @buffer = ""
+    def tag!(tag, contents='', attrs={}, &block)
+      contents = Context.build(&block) if block
+      "<%s%s>%s</%s>" % [tag, html_attrs(attrs), contents, tag]
     end
 
-    def block(tag, contents, attrs={})
-      "<%s%s>%s</%s>\n\n" % [tag, html_attr(attrs), indent(contents), tag]
-    end
-
-    def inline(tag, contents, attrs={})
-      "<%s%s>%s</%s>" % [tag, attrs, contents, tag]
-    end
-
-    def block!(tag, contents, attrs={})
-      @buffer << block(tag, contents, attrs)
-    end
-
-    def inline!(tag, contents, attrs={})
-      @buffer << inline(tag, contents, attrs)
-    end
-
-
-    def para(contents, attrs={})
-      contents = contents.join("<br />\n") if contents.kind_of? Array
-      block! :p, contents, attrs
-    end
-
-    def quote(contents, attrs={})
-      contents = contents.join("<br />\n") if contents.kind_of? Array
-      block! :blockquote, contents, attrs
-    end
-
-    def list(contents, attrs={})
-      contents = contents.collect {|item| inline(:li, item) }.join($/)
-      block! :ul, contents, attrs
-    end
-
-    def order(contents, attrs={})
-      contents = contents.collect {|item| inline(:li, item) }.join($/)
-      block! :ol, contents, attrs
-    end
-
-    def define(contents, attrs={})
-      tags = []
-      contents.each do |key, value|
-        tags << inline(:dt, key)
-        if value.kind_of? Array
-          value.each {|v| tags << inline(:dd, v) }
-        else
-          tags << inline(:dd, value)
-        end
+    def block!(tag, contents='', attrs={}, &block)
+      contents = Context.build(&block) if block
+      if contents.index("\n")
+        contents = indent(contents)
       end
-      block! :dl, tags.join($/), attrs
+      @buffer << tag!(tag, contents, attrs) << "\n"
+    end
+
+    def inline!(tag, contents='', attrs={}, &block)
+      @buffer << tag!(tag, contents, attrs, &block)
+    end
+
+    def text(contents)
+      @buffer << contents
+    end
+
+    # Block tags
+
+    def para(contents='', attrs={}, &block)
+      block! :p, contents, attrs, &block
+    end
+    alias_method :p, :para
+
+    def quote(contents='', attrs={}, &block)
+      block! :blockquote, contents, attrs, &block
+    end
+    alias_method :bq, :quote
+
+    def list(items=[], attrs={}, &block)
+      generic_list :ul, items, attrs, &block
+    end
+
+    def order(items=[], attrs={}, &block)
+      generic_list :ol, items, attrs, &block
+    end
+
+    def define(dict={}, attrs={}, &block)
+      if block
+        block! :dl, nil, attrs, &block
+      else
+        items = []
+        dict.each do |key,value|
+          items << tag!(:dt, key)
+          value.to_a.each {|val| items << tag!(:dd, val) }
+        end
+        block! :dl, items.join("\n")
+      end
+    end
+
+    def li(contents='', attrs={}, &block)
+      block! :li, contents, attrs, &block
+    end
+
+    # Inline tags
+    def a(contents='', url='', attrs={}, &block)
+      attrs[:href] = url
+      tag! :a, contents, attrs, &block
+    end
+
+    %w[em strong del ins code kbd sup sub].each do |meth|
+      class_eval %Q{
+        def #{meth}(contents='', attrs={}, &block)
+          tag! :#{meth}, contents, attrs, &block
+        end
+      }
     end
 
     private
 
-    def html_attr(attributes)
+    def html_attrs(attributes)
       return "" if attributes.empty?
       attributes.collect { |k, v|
         v = v.join(' ') if v.kind_of? Array
@@ -80,8 +102,20 @@ module Xup
       }.join
     end
 
+    def generic_list(tag, items=[], attrs={}, &block)
+      if block
+        block! tag, nil, attrs, &block
+      else
+        contents = items.collect {|i| tag! :li, i}.join("\n")
+        block! tag, contents, attrs, &block
+      end
+    end
+
     def indent(string)
       "\n#{string.split($/).collect {|l| " " * @options[:indent] + l }.join($/)}\n"
+    end
+
+    def format(type)
     end
   end
 end
