@@ -20,14 +20,16 @@ module Xup
       end
     end
 
-    def build(kind = self.class, &block)
+    def build(propagate = :inherit, kind = self.class, &block)
       context = kind.new
-      context.use *(class << self; self; end).included_modules
-      concat context.tap {|c| c.instance_eval(&block) }.buffer
+      if propagate == :inherit
+        context.use *(class << self; self; end).included_modules
+      end
+      context.tap {|c| c.instance_eval(&block) }.buffer
     end
 
-    def build!(kind = self.class, &block)
-      concat kind.new.tap {|c| c.instance_eval(&block) }.buffer
+    def build!(propagate = :inherit, kind = self.class, &block)
+      concat build(propagate, kind, &block)
     end
 
     def concat(string)

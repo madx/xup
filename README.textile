@@ -59,9 +59,8 @@ The Context class has 5 core methods: @#use()@, @.use()@, @#build()@,
 * The @use@ methods allows to include modules in the context without having
   to remember if it's @include@ of @extend@ that you must use.
   The class method version allows you to easily subclass Context.
-* @build@ creates the a Context of the given (or same) kind, includes any
-  module that is included in the current one, and outputs the results of the
-  context evaluation to the buffer.
-* @build!@ does the same thing as @build@ but doesn't include the modules in
-  the child context.
+* @build@ creates a Context of the given (or same) kind, includes any module 
+  that is included in the current one, and returns the result of the context
+  evaluation.
+* @build!@ outputs the result of build to the buffer.
 * @concat@ outputs a string in the buffer.

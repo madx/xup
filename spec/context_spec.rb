@@ -52,55 +52,52 @@ describe Xup::Context do
     end
   end # describe concat
 
-  describe "build methods" do
+  describe "build" do
     class CatContext < Xup::Context; use Cat end
     module Dog
       def bark() @buffer << "woof"; end
     end
 
-    describe "-> build" do
-      it "concats the evaluation of a sub-context" do
-        Xup::Context.new {
-          build { concat "text" }
-        }.buffer.should == "text"
-      end
+    it "concats the evaluation of a sub-context" do
+      Xup::Context.new {
+        concat build { concat "text" }
+      }.buffer.should == "text"
+    end
 
-      it "propagates included modules" do
+    it "handles module propagation" do
+      Xup::Context.new {
+        use Cat
+        concat build { meow }
+      }.buffer.should == "meow"
+
+      lambda {
         Xup::Context.new {
           use Cat
-          build { meow }
-        }.buffer.should == "meow"
-      end
+          concat build(:blank) { meow }
+        }
+      }.should.raise NameError, "undefined local variable or method `meow'"
+    end
 
-      it "can be passed another kind of context" do
+    it "can be passed another kind of context" do
+      Xup::Context.new {
+        use Dog
+        concat build(:inherit, CatContext) { meow; bark}
+      }.buffer.should == "meowwoof"
+
+      lambda {
         Xup::Context.new {
           use Dog
-          build(CatContext) { meow; bark}
-        }.buffer.should == "meowwoof"
-      end
-    end # describe build
+          concat build(:blank, CatContext) { meow; bark }
+        }
+      }.should.raise NameError, "undefined local variable or method `bark'"
+    end
+  end # describe build
 
-    describe "-> build!" do
-      it "does the same things as build without propagating modules" do
-        Xup::Context.new {
-          build! { concat "text" }
-        }.buffer.should == "text"
-
-        lambda {
-          Xup::Context.new {
-            use Cat
-            build! { meow }
-          }
-        }.should.raise NameError, "undefined local variable or method `meow'"
-
-        lambda {
-          Xup::Context.new {
-            use Dog
-            build!(CatContext) { meow; bark }
-          }
-        }.should.raise NameError, "undefined local variable or method `bark'"
-      end
-    end # describe build!
-  end # describe build methods
-
+  describe "build!" do
+    it "outputs the result of build to the buffer" do
+      Xup::Context.new {
+        build! { concat "text" }
+      }.buffer.should == "text"
+    end
+  end
 end
