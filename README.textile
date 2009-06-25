@@ -1,15 +1,67 @@
 h1. Xup
 
-Xup is a lightweight markup language. It borrows many ideas to Haml,
-Markaby and Textile. I made it to have a language that handles correctly and
-easily different kinds of typography.
-Xup is written in pure Ruby, making it highly extensible. You can add your own
-constructs and tags.
+Xup is a lightweight Ruby DSL that allows you to programatically write almost
+any kind of document. Since it is pure Ruby, it's blazing fast compared to
+other markup engines. It is also highly extensible and it is designed
+specifically in that way.
 
-h2. Example
+Xup provides two default engines to write @HTML@ and @YAML@ documents, but you
+can easily write your own ones.
 
-<pre><code>
-para <<end :class => "notice"
-Hello, this is Xup! This is a simple paragraph. You can include raw HTML in
-them.
-</code></pre>
+
+h2. @HTML@ and @YAML@ examples
+
+h3. @HTML@
+
+<pre><code>Xup::Document::HTML.build do
+p <<e
+This is an HTML paragraph!
+e
+
+ul ['and', 'a short', 'list']
+end</code></pre>
+
+<pre><code><p>
+  This is an HTML paragraph!
+</p>
+<ul>
+  <li>and</li>
+  <li>a short</li>
+  <li>list</li>
+</ul></pre></code>
+
+h3. @YAML@
+
+<pre><code>Xup::Document::YAML.build do
+map _= {
+  :key => "value",
+  :time => Time.now
+  :array => seq %w[a b c]
+}
+end</code></pre>
+
+<pre><code>:key: value
+:time: 2009-06-24 17:30:58.246316 +02:00
+:array:
+  - a
+  - b
+  - c
+</pre></code>
+
+h2. Internals
+
+The main part of Xup is the Xup::Context class. Everything ensues from it.
+Basically, a Context is an object that holds a buffer and an hash of options.
+
+The Context class has 5 core methods: @#use()@, @.use()@, @#build()@,
+@#build!()@, and @#concat()@:
+
+* The @use@ methods allows to include modules in the context without having
+  to remember if it's @include@ of @extend@ that you must use.
+  The class method version allows you to easily subclass Context.
+* @build@ creates the a Context of the given (or same) kind, includes any
+  module that is included in the current one, and outputs the results of the
+  context evaluation to the buffer.
+* @build!@ does the same thing as @build@ but doesn't include the modules in
+  the child context.
+* @concat@ outputs a string in the buffer.

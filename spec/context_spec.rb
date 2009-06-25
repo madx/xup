@@ -1,156 +1,106 @@
+module Cat
+  def meow
+    @buffer << "meow"
+  end
+end
+
 describe Xup::Context do
 
-  before do
-    def build(&blk)
-      @context.instance_eval &blk
-    end
+  describe "initialization" do
 
-    def buffer
-      @context.buffer
-    end
-
-    @context = Xup::Context.new
-  end
-
-  describe "== Initialization" do
-    it "creates a read-only empty buffer" do
-      @context.buffer.should.be.empty
-      lambda { @context.buffer = "foo" }.should.raise NoMethodError
-    end
-
-    it "provides default options" do
-      @context.options.should == Xup::Context::DEFAULTS
-    end
-  end
-
-  describe "== Underlying methods" do
-    describe ".tag!" do
-      it "returns a string with the corresponding.tag!" do
-        @context.tag!(:em, "word").should == "<em>word</em>"
-      end
-
-      it "returns an empty tag when contents are empty" do
-        @context.tag!(:em).should == '<em></em>'
-      end
-
-      it "transorms the attributes hash to HTML attributes" do
-        @context.tag!(:a, 'link', :href => 'http://somesite.com').
-          should == '<a href="http://somesite.com">link</a>'
-      end
-
-      it "makes a nested tag when given a block" do
-        @context.tag!(:p) { @buffer << tag!(:em, 'word') }.
-          should == "<p><em>word</em></p>"
+    before do
+      @context = Xup::Context.new(:opt => :value) do
+        @buffer << "text"
       end
     end
 
-    describe "#block!" do
-      it 'acts as inline! when there is a single line' do
-        build { block! :p, "paragraph"}
-        buffer.should == "<p>paragraph</p>\n"
-      end
-
-      it "indents the contents when a block is given" do
-        build { block!(:p) { text "a\nparagraph" } }
-        buffer.should == "<p>\n  a\n  paragraph\n</p>\n"
-      end
+    it "takes an option hash" do
+      @context.options.should == {:opt => :value}
     end
 
-    describe "#text" do
-      it "outputs given contents in the buffer" do
-        build { text "foo" }
-        buffer.should == "foo"
-      end
-    end
-  end
-
-  describe "== Block tags" do
-
-    describe "para (paragraph, <p>)" do
-      it "outputs a block paragraph in the buffer" do
-        build { para "paragraph" }
-        buffer.should == "<p>paragraph</p>\n"
-      end
-
-      it "supports nesting" do
-        build { para { text "nested text" } }
-        buffer.should == "<p>nested text</p>\n"
-      end
-
-      it "should be callable as p" do
-        @context.para("paragraph").should == @context.p("paragraph")
-      end
+    it "evaluates the given block" do
+      @context.buffer.should == "text"
+      Xup::Context.new.buffer.should.be.empty
     end
 
-    describe "quote (block quotation, <blockquote>)" do
-      it "outputs a block quotation in the buffer" do
-        build { quote "Xup rocks!" }
-        buffer.should == "<blockquote>Xup rocks!</blockquote>\n"
-      end
+  end # describe initialization
 
-      it "supports nesting" do
-        build { quote { text "Xup rocks!\n"; inline! :cite, 'me' } }
-        buffer.should == %Q{
-          <blockquote>\n  Xup rocks!\n  <cite>me</cite>\n</blockquote>
-        }.strip << "\n"
+  describe "use" do
+    it "adds modules to the current instance" do
+      xc = Xup::Context.new do
+        use Cat
+        meow
       end
-
-      it "should be callable as bq" do
-        @context.bq("quote").should == @context.quote("quote")
-      end
+      xc.buffer.should == "meow"
     end
 
-    describe "list (unordered list, <ul>)" do
-      it "outputs an unordered list of elements in the buffer" do
-        build { list %w[one two] }
-        buffer.should == "<ul>\n  <li>one</li>\n  <li>two</li>\n</ul>\n"
+    it "is available as a class method" do
+      class SubContext < Xup::Context; use Cat end
+      sc = SubContext.new do
+        meow
+      end
+      sc.buffer.should == "meow"
+    end
+  end # describe use
+
+  describe "concat" do
+    it "appends a string to the buffer" do
+      xc = Xup::Context.new { concat "text" }
+      xc.buffer.should == "text"
+      xc.concat "\ntext"
+      xc.buffer.should == "text\ntext"
+    end
+  end # describe concat
+
+  describe "build methods" do
+    class CatContext < Xup::Context; use Cat end
+    module Dog
+      def bark() @buffer << "woof"; end
+    end
+
+    describe "-> build" do
+      it "concats the evaluation of a sub-context" do
+        Xup::Context.new {
+          build { concat "text" }
+        }.buffer.should == "text"
       end
 
-      it "supports nesting" do
-        build {
-          list {
-            inline! :li, 'one'
-            text "\n"
-            inline! :li, 'two'
+      it "propagates included modules" do
+        Xup::Context.new {
+          use Cat
+          build { meow }
+        }.buffer.should == "meow"
+      end
+
+      it "can be passed another kind of context" do
+        Xup::Context.new {
+          use Dog
+          build(CatContext) { meow; bark}
+        }.buffer.should == "meowwoof"
+      end
+    end # describe build
+
+    describe "-> build!" do
+      it "does the same things as build without propagating modules" do
+        Xup::Context.new {
+          build! { concat "text" }
+        }.buffer.should == "text"
+
+        lambda {
+          Xup::Context.new {
+            use Cat
+            build! { meow }
           }
-        }
-        buffer.should == "<ul>\n  <li>one</li>\n  <li>two</li>\n</ul>\n"
-      end
-    end
+        }.should.raise NameError, "undefined local variable or method `meow'"
 
-    describe "order (ordred list, <ol>)" do
-      it "works like list() but with an ordered list" do
-        build {
-          order %w[one two]
-          order {
-            inline! :li, 'one'
-            text "\n"
-            inline! :li, 'two'
+        lambda {
+          Xup::Context.new {
+            use Dog
+            build!(CatContext) { meow; bark }
           }
-        }
-        buffer.should == "<ol>\n  <li>one</li>\n  <li>two</li>\n</ol>\n" +
-                         "<ol>\n  <li>one</li>\n  <li>two</li>\n</ol>\n"
+        }.should.raise NameError, "undefined local variable or method `bark'"
       end
-    end
+    end # describe build!
+  end # describe build methods
 
-    describe "define (definition list, <dl>)" do
-      it "takes an hash an outputs a definition list in the buffer" do
-        build { define "word" => "a unit of language" }
-        buffer.should ==
-          "<dl>\n  <dt>word</dt>\n  <dd>a unit of language</dd>\n</dl>\n"
-      end
-
-      it "supports nesting" do
-        build {
-          define {
-            inline! :dt, "word"
-            text "\n"
-            inline! :dd, "a unit of language"
-          }
-        }
-        buffer.should ==
-          "<dl>\n  <dt>word</dt>\n  <dd>a unit of language</dd>\n</dl>\n"
-      end
-    end
-  end
 end
