@@ -21,6 +21,7 @@ module Xup
     end
 
     def build(propagate=:inherit, kind=self.class, options={}, &block)
+      options = @options.merge(options) if propagate == :inherit
       context = kind.new(options)
       if propagate == :inherit
         context.use *(class << self; self; end).included_modules

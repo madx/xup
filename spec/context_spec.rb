@@ -103,6 +103,16 @@ describe Xup::Context do
           concat options[:option]
         }
       }.buffer.should == "value"
+      Xup::Context.new(:option => :value) {
+        concat build(:inherit) {
+          concat options[:option]
+        }
+      }.buffer.should == "value"
+      Xup::Context.new(:option => :value) {
+        concat build(:blank) {
+          concat options[:option]
+        }
+      }.buffer.should == ""
     end
   end # describe build
 
