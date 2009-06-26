@@ -1,9 +1,11 @@
 # coding: utf-8
 $KCODE = 'u' if RUBY_VERSION < "1.9"
 
-module Xup
-  module Modules; end
-  module Document; end
+module Xup #:nodoc:
+  module Modules #:nodoc: all
+  end
+  module Document #:nodoc: all
+  end
 end
 
 %w[context].each do |lib|
