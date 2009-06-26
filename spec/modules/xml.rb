@@ -92,7 +92,7 @@ describe Xup::Modules::XML do
 
     it 'has a bang version to output to the buffer' do
       @context.comment! 'text'
-      @context.buffer.should == '<!-- text -->'
+      @context.buffer.should == "<!-- text -->\n"
     end
   end
 
@@ -116,7 +116,7 @@ describe Xup::Modules::XML do
 
     it 'has a bang version to output to the buffer' do
       @context.cdata! 'text'
-      @context.buffer.should == '<![CDATA[ text ]]>'
+      @context.buffer.should == "<![CDATA[ text ]]>\n"
     end
   end
 end

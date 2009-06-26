@@ -24,7 +24,7 @@ module Xup
       end
 
       def comment!(contents='', &block)
-        concat comment(contents, &block)
+        concat comment(contents, &block) + "\n"
       end
 
       def cdata(contents='', &block)
@@ -33,15 +33,15 @@ module Xup
       end
 
       def cdata!(contents='', &block)
-        concat cdata(contents, &block)
+        concat cdata(contents, &block) + "\n"
       end
 
       def instruct(instruction, attrs={})
-        '<?%s %s?>' % [instruction, xml_attr(attrs)]
+        '<?%s%s?>' % [instruction, xml_attr(attrs)]
       end
 
       def instruct!(instruction, attrs={})
-        concat instruct(instruction, attrs)
+        concat instruct(instruction, attrs) + "\n"
       end
 
       private
