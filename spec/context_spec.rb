@@ -50,6 +50,11 @@ describe Xup::Context do
       xc.concat "\ntext"
       xc.buffer.should == "text\ntext"
     end
+
+    it "force to a string" do
+      xc = Xup::Context.new { concat :text }
+      xc.buffer.should == 'text'
+    end
   end # describe concat
 
   describe "build" do
@@ -90,6 +95,14 @@ describe Xup::Context do
           concat build(:blank, CatContext) { meow; bark }
         }
       }.should.raise NameError, "undefined local variable or method `bark'"
+    end
+
+    it 'can pass options to the child context' do
+      Xup::Context.new {
+        concat build(:inherit, self.class, :option => :value) {
+          concat options[:option]
+        }
+      }.buffer.should == "value"
     end
   end # describe build
 
