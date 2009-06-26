@@ -62,5 +62,9 @@ The Context class has 5 core methods: @#use()@, @.use()@, @#build()@,
 * @build@ creates a Context of the given (or same) kind, includes any module 
   that is included in the current one, and returns the result of the context
   evaluation.
+* @build@ creates a new child context of the given (or same) kind and
+  returns the result of the block evaluation.
+  If propagate is set to inherit, all modules included in the parent context
+  are included in the child, which also inherits options from its parent.
 * @build!@ outputs the result of build to the buffer.
 * @concat@ outputs a string in the buffer.
