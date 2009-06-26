@@ -1,4 +1,5 @@
-require File.join(File.dirname(__FILE__), '..', 'lib', 'xup')
+$:.unshift File.join(File.dirname(__FILE__), '..', 'lib')
+require 'xup'
 require 'bacon'
 
 module Bacon
