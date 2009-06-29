@@ -1,10 +1,10 @@
 # coding: utf-8
 $KCODE = 'u' if RUBY_VERSION < "1.9"
 
-module Xup #:nodoc:
-  module Modules #:nodoc: all
+module Xup
+  module Modules #:nodoc:
   end
-  module Document #:nodoc: all
+  module Document
   end
 end
 

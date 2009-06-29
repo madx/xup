@@ -8,45 +8,6 @@ specifically in that way.
 Xup provides two default engines to write HTML and YAML documents, but you
 can easily write your own ones.
 
-
-== HTML and YAML examples
-
-=== HTML
-
-  Xup::Document::HTML.build do
-  p "This is an HTML paragraph!"
-
-  ul ['and', 'a short', 'list']
-  end
-
-  # =>
-  # <p>
-  #   This is an HTML paragraph!
-  # </p>
-  # <ul>
-  #   <li>and</li>
-  #   <li>a short</li>
-  #   <li>list</li>
-  # </ul>
-
-=== YAML
-
-  Xup::Document::YAML.build do
-  map _= {
-    :key => "value",
-    :time => Time.now
-    :array => seq %w[a b c]
-  }
-  end
-  
-  # =>
-  # key: value
-  # :time: 2009-06-24 17:30:58.246316 +02:00
-  # :array:
-  #   - a
-  #   - b
-  #   - c
-
 == Internals
 
 The main part of Xup is the Xup::Context class. Everything ensues from it.
