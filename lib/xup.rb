@@ -6,6 +6,12 @@ module Xup
   end
   module Document
   end
+
+  def self.load(*mods)
+    mods.each do |mod|
+      require File.join(File.dirname(__FILE__), 'xup', 'modules', mod.to_s)
+    end
+  end
 end
 
 %w[context].each do |lib|
