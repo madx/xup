@@ -14,7 +14,6 @@ module Xup
   end
 
   def self.get_module(mod)
-    name = mod.to_s.capitalize.to_sym
     if Object.const_defined?(name)
       Object.const_get name
     elsif Modules.const_defined?(name)

@@ -28,14 +28,14 @@ describe Xup::Context do
   describe "use" do
     it "adds modules to the current instance" do
       xc = Xup::Context.new do
-        use :cat
+        use :Cat
         meow
       end
       xc.buffer.should == "meow"
     end
 
     it "is available as a class method" do
-      class SubContext < Xup::Context; use :cat end
+      class SubContext < Xup::Context; use :Cat end
       sc = SubContext.new do
         meow
       end
@@ -49,7 +49,7 @@ describe Xup::Context do
         end
       end
       xc = Xup::Context.new do
-        use :cat
+        use :Cat
         meow
       end
       xc.buffer.should == "meow"
