@@ -3,10 +3,15 @@ require 'optparse'
 LIB_DIR = File.join(File.dirname(__FILE__), '..', 'lib')
 require File.join(LIB_DIR, 'xup')
 
+$:.unshift File.join(LIB_DIR, 'xup', 'modules')
+$:.unshift File.join(ENV['HOME'], '.xup')
+$:.unshift '.'
+
+
 wrap = false
 
 opts = OptionParser.new { |opts|
-  opts.banner = "Usage: #{$0} [options] file"
+  opts.banner = "Usage: #{$0} [options] file..."
 
   opts.on('-I', '--include PATH',
           'specify $LOAD_PATH (may be used more than once)') { |path|
@@ -15,11 +20,7 @@ opts = OptionParser.new { |opts|
 
   opts.on('-r', '--require LIBRARY',
           'require the library before executing the script') { |lib|
-    begin
-      require lib
-    rescue LoadError
-      require File.join(LIB_DIR, 'xup', 'modules', lib)
-    end
+    require lib
   }
 
   opts.on('-w', '--wrap', 'Wrap file contents in a Context block') do
