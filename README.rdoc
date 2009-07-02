@@ -8,20 +8,7 @@ specifically in that way.
 Xup provides two default engines to write HTML and YAML documents, but you
 can easily write your own ones.
 
-== Internals
+== Example
 
-The main part of Xup is the Xup::Context class. Everything ensues from it.
-Basically, a Context is an object that holds a buffer and an hash of options.
+== Extend
 
-The Context class has 5 core methods: #use, .use(), #build(),
-#build!(), and #concat():
-
-* The use methods allows to include modules in the context without 
-  having to remember if it's include of extend that you must use. The class
-  method version allows you to easily subclass Context.
-* #build creates a new child context of the given (or same) kind and
-  returns the result of the block evaluation.
-  If propagate is set to inherit, all modules included in the parent context
-  are included in the child, which also inherits options from its parent.
-* #build! outputs the result of build to the buffer.
-* #concat outputs a string in the buffer.

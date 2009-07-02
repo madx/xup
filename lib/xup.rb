@@ -12,6 +12,17 @@ module Xup
       require File.join(File.dirname(__FILE__), 'xup', 'modules', mod.to_s)
     end
   end
+
+  def self.get_module(mod)
+    name = mod.to_s.capitalize.to_sym
+    if Object.const_defined?(name)
+      Object.const_get name
+    elsif Modules.const_defined?(name)
+      Modules.const_get name
+    else
+      raise NameError, "no such module #{name}"
+    end
+  end
 end
 
 %w[context].each do |lib|
