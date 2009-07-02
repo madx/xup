@@ -1,0 +1,52 @@
+#!/usr/bin/env ruby
+require 'optparse'
+LIB_DIR = File.join(File.dirname(__FILE__), '..', 'lib')
+require File.join(LIB_DIR, 'xup')
+
+wrap = false
+
+opts = OptionParser.new { |opts|
+  opts.banner = "Usage: #{$0} [options] file"
+
+  opts.on('-I', '--include PATH',
+          'specify $LOAD_PATH (may be used more than once)') { |path|
+    $LOAD_PATH.unshift *path.split(':')
+  }
+
+  opts.on('-r', '--require LIBRARY',
+          'require the library before executing the script') { |lib|
+    begin
+      require lib
+    rescue LoadError
+      require File.join(LIB_DIR, 'xup', 'modules', lib)
+    end
+  }
+
+  opts.on('-w', '--wrap', 'Wrap file contents in a Context block') do
+    wrap = true
+  end
+
+  opts.on_tail('-h', '--help', 'Show this message') do
+    puts opts
+    exit
+  end
+
+  opts.parse! ARGV
+}
+
+files = ARGV
+
+if files.empty?
+  puts opts.banner
+  exit 1
+end
+
+if wrap
+  files.each do |file|
+    puts Xup::Context.new(&lambda { eval(File.read(file)) }).buffer
+  end
+else
+  files.each do |file|
+    puts eval(File.read(file)).buffer
+  end
+end
