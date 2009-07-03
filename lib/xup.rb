@@ -13,7 +13,7 @@ module Xup
     end
   end
 
-  def self.get_module(mod)
+  def self.get_module(name)
     if Object.const_defined?(name)
       Object.const_get name
     elsif Modules.const_defined?(name)
